@@ -10,6 +10,15 @@ import { Lesson } from './types';
 
 const App: React.FC = () => {
     const [currentLesson, setCurrentLesson] = useState<Lesson>(LESSONS[0]);
+    // Store saved diagrams by lesson ID to persist them during session
+    const [savedDiagrams, setSavedDiagrams] = useState<Record<string, string>>({});
+
+    const handleSaveDiagram = (lessonId: string, imageUrl: string) => {
+        setSavedDiagrams(prev => ({
+            ...prev,
+            [lessonId]: imageUrl
+        }));
+    };
 
     // Helper to render simple markdown-like text
     const renderContent = (text: string) => {
@@ -82,9 +91,12 @@ const App: React.FC = () => {
 
                             {/* AI Diagram Generator */}
                             <DiagramGenerator 
-                                key={currentLesson.id} // Force reset state on lesson change
+                                key={currentLesson.id} // Force reset internal state on lesson change
+                                lessonId={currentLesson.id}
                                 lessonPrompt={currentLesson.diagramPrompt} 
-                                lessonTitle={currentLesson.title} 
+                                lessonTitle={currentLesson.title}
+                                savedImageUrl={savedDiagrams[currentLesson.id]}
+                                onSave={(url) => handleSaveDiagram(currentLesson.id, url)}
                             />
                         </>
                     )}
