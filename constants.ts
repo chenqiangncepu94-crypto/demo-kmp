@@ -280,7 +280,8 @@ Wasm 本身是沙盒环境，它无法直接接触外部世界。
    5. -> Skia Draw Operations
    6. -> WebGL Context Render (GPU)
 */`,
-        diagramPrompt: "A complex, detailed engineering blueprint schema. 3 DISTINCT SECTIONS. Section 1 'COMPILATION': Detailed flowchart from 'Kotlin Code' -> 'IR Tree (Nodes)' -> 'Wasm Binary'. Section 2 'THE BRIDGE': Close-up schematic of the 'Import Object' acting as a connector, binding 'WebGL Context' and 'JS DOM Events' into the 'Wasm Instance'. Section 3 'RUNTIME LOOP': A circular system diagram showing 'Event Loop' -> 'State Snapshot' -> 'Layout Calculation' -> 'Skia Draw Ops' -> 'GPU Rasterization'. Style: Professional CAD or Architecture Blueprint, dark blue background, white technical lines, annotated extensively."
+        diagramPrompt: "A complex, detailed engineering blueprint schema. 3 DISTINCT SECTIONS. Section 1 'COMPILATION': Detailed flowchart from 'Kotlin Code' -> 'IR Tree (Nodes)' -> 'Wasm Binary'. Section 2 'THE BRIDGE': Close-up schematic of the 'Import Object' acting as a connector, binding 'WebGL Context' and 'JS DOM Events' into the 'Wasm Instance'. Section 3 'RUNTIME LOOP': A circular system diagram showing 'Event Loop' -> 'State Snapshot' -> 'Layout Calculation' -> 'Skia Draw Ops' -> 'GPU Rasterization'. Style: Professional CAD or Architecture Blueprint, dark blue background, white technical lines, annotated extensively.",
+        videoPrompt: "A futuristic, high-tech 3D animation visualizing a compiler pipeline. The camera tracks glowing blue data packets moving through fiber optic lines, transforming into geometric code structures, then assembling into a sleek, modern user interface screen. Cyberpunk aesthetic, neon cyan and deep blue lighting, smooth motion, 16:9 aspect ratio."
     },
     {
         id: 'lesson_7_playground',
@@ -312,5 +313,70 @@ Column {
     }
 }`,
         diagramPrompt: "A split-screen IDE interface. Left side shows colorful Kotlin code logic. Right side shows the rendered UI result on a phone screen representation. An arrow connects code changes to immediate UI updates, labeled 'Hot Reload'."
+    },
+    {
+        id: 'lesson_8_interpreter',
+        title: '8. 幕后揭秘: 手写微型解释器',
+        description: '我们是如何在没有编译器的情况下，让你的 "Kotlin" 代码跑起来的？',
+        content: `
+### 揭开魔术的面纱
+
+你刚才使用的 Playground 并没有真正的 Kotlin 编译器（K2）。它是一个用 **React + TypeScript + Regex** 编写的微型解释器。
+
+真正的编译器有 50MB+，并且在浏览器中运行需要 WebWorker 支持。为了在这个简易的 Demo 中实现 "秒开" 和 "热重载"，我采用了**领域特定语言 (DSL) 映射**的技术。
+
+### 工作原理 (The "Fake" Pipeline)
+
+#### 1. 词法分析 (Lexing) - Regex Magic
+我没有写完整的语法树解析器 (Parser)，而是使用了**正则表达式**来识别特定的 Compose 模式：
+*   识别 \`Text("...")\` -> 提取字符串内容。
+*   识别 \`Button(onClick = { ... })\` -> 提取花括号内的逻辑。
+
+#### 2. 变量绑定 (Variable Binding)
+当你在代码里写 \`$count\` 时，我的解释器做了一个简单的字符串替换 (String Interpolation)，把它换成了当前 React 的 State 值。
+
+#### 3. 动作映射 (Action Mapping)
+当解析器看到 \`count++\` 或 \`count += 5\` 时，它并没有真正执行 Kotlin 代码，而是将其映射为一个 **Redux 风格的 Action**：
+\`{ type: 'INCREMENT', payload: 1 }\`。
+然后，这个 Action 触发了 React 的 \`setState\`。
+
+#### 4. 渲染 (Mapping to DOM)
+最终，解析出的 \`ParsedElement\` 对象树被映射回 HTML 标签：
+*   Compose \`Column\` -> HTML \`flex-col\`
+*   Compose \`Text\` -> HTML \`div\`
+*   Compose \`Button\` -> HTML \`button\`
+
+这就是为什么它看起来像 Kotlin，跑起来像 React。这本身也是一种跨平台思想的体现：**用声明式的 DSL 描述意图，具体的 Runtime (React/Wasm/Android) 负责实现。**
+        `,
+        codeExample: `// 这就是 Playground 背后的核心逻辑 (TypeScript)
+
+// 1. 解析器：把字符串代码变成 JSON 对象树
+const parseCode = (input: string, stateVal: number) => {
+    const elements = [];
+    
+    // 作弊：使用正则匹配，而不是真正的 AST
+    if (input.includes('Text')) {
+       // 处理变量插值
+       const text = input.match(/"(.*)"/)[1]
+           .replace('$count', stateVal); 
+           
+       elements.push({ type: 'Text', content: text });
+    }
+    
+    if (input.includes('Button')) {
+       // 识别意图，映射为 Action
+       const action = input.includes('count++') ? 'INCREMENT' : 'NONE';
+       elements.push({ type: 'Button', action: action });
+    }
+    
+    return elements;
+};
+
+// 2. 渲染器：把 JSON 对象树变成 React 组件
+const Renderer = ({ element }) => {
+    if (element.type === 'Text') return <div>{element.content}</div>;
+    if (element.type === 'Button') return <button onClick={handleAction} />;
+}`,
+        diagramPrompt: "Diagram showing the 'Fake Interpreter' architecture. Left input: 'Kotlin String Code'. Middle box: 'Regex Parser Engine'. Arrows pointing to 'JSON Tree'. Right box: 'React Render Loop' consuming the JSON. Bottom: 'React State' feeding back into the input for variable interpolation."
     }
 ];

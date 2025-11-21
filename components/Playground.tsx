@@ -7,6 +7,7 @@ interface ParsedElement {
     children?: ParsedElement[];
     content?: string;
     action?: 'INCREMENT' | 'DECREMENT' | 'RESET' | 'TOAST' | 'NONE';
+    payload?: number; // Added for variable increment
 }
 
 export const Playground: React.FC = () => {
@@ -27,15 +28,16 @@ Column {
     }
 
     Spacer(height = 10)
+    
+    // 尝试点击下面的 "快速插入" 添加更多事件
+    Button(onClick = { count += 5 }) {
+        Text("Add 5 (Quick)")
+    }
+
+    Spacer(height = 10)
 
     Button(onClick = { count = 0 }) {
         Text("Reset", color = Color.Red)
-    }
-    
-    Spacer(height = 30)
-    
-    Button(onClick = { println("Hello KMP!") }) {
-        Text("Show Toast")
     }
 }`);
 
@@ -94,16 +96,34 @@ Column {
             else if (trimmed.startsWith('Button')) {
                 // Detect Actions in onClick lambda
                 let action: ParsedElement['action'] = 'NONE';
-                if (trimmed.includes('count++') || trimmed.includes('count += 1')) action = 'INCREMENT';
-                else if (trimmed.includes('count--')) action = 'DECREMENT';
-                else if (trimmed.includes('count = 0')) action = 'RESET';
-                else if (trimmed.includes('println') || trimmed.includes('Toast')) action = 'TOAST';
+                let payload = 1;
+
+                if (trimmed.includes('count++')) {
+                    action = 'INCREMENT';
+                    payload = 1;
+                } else if (trimmed.match(/count\s*\+=\s*(\d+)/)) {
+                    action = 'INCREMENT';
+                    const m = trimmed.match(/count\s*\+=\s*(\d+)/);
+                    payload = m ? parseInt(m[1]) : 1;
+                } else if (trimmed.includes('count--')) {
+                    action = 'DECREMENT';
+                    payload = 1;
+                } else if (trimmed.match(/count\s*\-=\s*(\d+)/)) {
+                    action = 'DECREMENT';
+                    const m = trimmed.match(/count\s*\-=\s*(\d+)/);
+                    payload = m ? parseInt(m[1]) : 1;
+                } else if (trimmed.includes('count = 0')) {
+                    action = 'RESET';
+                } else if (trimmed.includes('println') || trimmed.includes('Toast')) {
+                    action = 'TOAST';
+                }
 
                 const btn: ParsedElement = {
                     type: 'Button',
                     props: {},
                     children: [],
-                    action: action
+                    action: action,
+                    payload: payload
                 };
                 currentParent = btn;
                 elements.push(btn);
@@ -173,8 +193,9 @@ Column {
         }
         if (element.type === 'Button') {
             const handleClick = () => {
-                if (element.action === 'INCREMENT') setCount(c => c + 1);
-                if (element.action === 'DECREMENT') setCount(c => c - 1);
+                const val = element.payload || 1;
+                if (element.action === 'INCREMENT') setCount(c => c + val);
+                if (element.action === 'DECREMENT') setCount(c => c - val);
                 if (element.action === 'RESET') setCount(0);
                 if (element.action === 'TOAST') showToast("System.out: Hello KMP!");
             };
@@ -215,16 +236,19 @@ Column {
                     <p className="text-xs text-gray-400 mb-2">快速插入代码 (Quick Insert):</p>
                     <div className="flex flex-wrap gap-2">
                         <button onClick={() => insertCode('Button(onClick = { count++ }) {\n        Text("Add 1")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-green-400 rounded border border-gray-600 transition-colors">
-                            + Click Event (Inc)
+                            + count++
                         </button>
-                        <button onClick={() => insertCode('Button(onClick = { println("Hi") }) {\n        Text("Log")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-blue-400 rounded border border-gray-600 transition-colors">
-                            + Print/Toast
+                        <button onClick={() => insertCode('Button(onClick = { count += 5 }) {\n        Text("Add 5")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-green-400 rounded border border-gray-600 transition-colors">
+                            + count += 5
                         </button>
-                        <button onClick={() => insertCode('Text("Val: $count", color = Color.Red)')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-red-400 rounded border border-gray-600 transition-colors">
-                            + Text w/ State
+                        <button onClick={() => insertCode('Button(onClick = { count-- }) {\n        Text("Dec (-1)")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-yellow-400 rounded border border-gray-600 transition-colors">
+                            + count--
                         </button>
-                        <button onClick={() => insertCode('Spacer(height = 20)')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-yellow-400 rounded border border-gray-600 transition-colors">
-                            + Spacer
+                        <button onClick={() => insertCode('Button(onClick = { count = 0 }) {\n        Text("Reset")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-red-400 rounded border border-gray-600 transition-colors">
+                            + Reset
+                        </button>
+                        <button onClick={() => insertCode('Button(onClick = { println("Hello") }) {\n        Text("Toast")\n    }')} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-blue-400 rounded border border-gray-600 transition-colors">
+                            + Toast
                         </button>
                     </div>
                 </div>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { DiagramGenerator } from './components/DiagramGenerator';
+import { VideoGenerator } from './components/VideoGenerator';
 import { CodeViewer } from './components/CodeViewer';
 import { Playground } from './components/Playground';
 import { LESSONS } from './constants';
@@ -38,6 +39,7 @@ const App: React.FC = () => {
     };
 
     const isPlaygroundLesson = currentLesson.id === 'lesson_7_playground';
+    const hasVideoPrompt = !!currentLesson.videoPrompt;
 
     return (
         <div className="flex h-screen bg-gray-900 font-sans">
@@ -71,7 +73,7 @@ const App: React.FC = () => {
                         {renderContent(currentLesson.content)}
                     </article>
 
-                    {/* Conditional Rendering: Playground vs Standard Code/Diagram */}
+                    {/* Conditional Rendering: Playground vs Video vs Standard Code/Diagram */}
                     {isPlaygroundLesson ? (
                         <Playground />
                     ) : (
@@ -89,15 +91,24 @@ const App: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* AI Diagram Generator */}
-                            <DiagramGenerator 
-                                key={currentLesson.id} // Force reset internal state on lesson change
-                                lessonId={currentLesson.id}
-                                lessonPrompt={currentLesson.diagramPrompt} 
-                                lessonTitle={currentLesson.title}
-                                savedImageUrl={savedDiagrams[currentLesson.id]}
-                                onSave={(url) => handleSaveDiagram(currentLesson.id, url)}
-                            />
+                            {/* Video Generator (Priority over Diagram if present) */}
+                            {hasVideoPrompt ? (
+                                <VideoGenerator 
+                                    key={currentLesson.id}
+                                    prompt={currentLesson.videoPrompt!}
+                                    lessonTitle={currentLesson.title}
+                                />
+                            ) : (
+                                /* AI Diagram Generator */
+                                <DiagramGenerator 
+                                    key={currentLesson.id} // Force reset internal state on lesson change
+                                    lessonId={currentLesson.id}
+                                    lessonPrompt={currentLesson.diagramPrompt} 
+                                    lessonTitle={currentLesson.title}
+                                    savedImageUrl={savedDiagrams[currentLesson.id]}
+                                    onSave={(url) => handleSaveDiagram(currentLesson.id, url)}
+                                />
+                            )}
                         </>
                     )}
                     

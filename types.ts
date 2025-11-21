@@ -19,6 +19,7 @@ export interface Lesson {
     content: string;
     codeExample?: string; // Changed from comparison object to single string
     diagramPrompt: string; // Prompt to send to Nano Banana
+    videoPrompt?: string; // Optional prompt for Veo video generation
 }
 
 export enum LoadingState {
