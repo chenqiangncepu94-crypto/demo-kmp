@@ -1,0 +1,5 @@
+{
+  "name": "Copy of KMP Counter Demo Course",
+  "description": "A step-by-step interactive course explaining how a Kotlin Counter App is compiled to Wasm and rendered on the web, tailored for React developers.",
+  "requestFramePermissions": []
+}
